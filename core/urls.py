@@ -1,0 +1,12 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path("", views.index),
+    path('signup', views.signup),
+    path('signin', views.signin),
+    path('logout', views.logout),
+    path('setting', views.setting),
+    path('upload', views.upload),
+    path('like-post', views.like_post),
+]
