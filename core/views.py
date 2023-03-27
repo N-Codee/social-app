@@ -3,10 +3,59 @@ from django.contrib.auth.models import User, auth
 from django.contrib import messages
 from django.http import HttpResponse
 from .models import Profile, Post, LikePost
+from .serializers import UserRegister
 
 from django.contrib.auth.decorators import login_required
-
+from rest_framework.views import APIView
+from rest_framework.authtoken.models import Token
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 # Create your views here.
+
+
+class register(APIView):
+    
+    def post(self,request,format=None):
+        serializer=UserRegister(data=request.data)
+        data={}
+        if serializer.is_valid():
+            account=serializer.save()
+            data['response']='registered'
+            data['username']=account.username
+            data['email']=account.email
+            token, create =Token.objects.get_or_create(user=account)
+            data['token']=token.key
+        else:
+            data=serializer.errors
+        return Response(data)
+            
+    
+
+class getpost(APIView):
+    permission_class = (IsAuthenticated)
+
+    def get(self, request):
+        post = Post.objects.get(user=str(request.user))
+        data = {"post_id":str(post.id),"no_of_likes":str(post.no_of_likes)}
+        return Response(data)
+        
+
+class postfeed(APIView):
+
+    permission_class = (IsAuthenticated)
+
+    def post(self, request):
+
+        new_like = LikePost.objects.create(post_id=str(request.data["post_id"]), username=str(request.data["username"]))
+        post = Post.objects.get(id=str(request.data["post_id"]), user=str(request.data["username"]))
+        new_like.save()
+        post.no_of_likes = post.no_of_likes + int(request.data["no_of_like"])
+        post.save()
+        res = {"message":"post updated sucessfully","total likes": post.no_of_likes}
+
+        return Response(res)
+
+
 
 
 @login_required(login_url='/signin')
